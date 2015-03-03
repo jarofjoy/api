@@ -104,9 +104,9 @@
 		else
 		{
 			$password=$_POST['password'];
-			$email=$_POST['email'];
-			$query=mysqli_query($con,"ALTER TABLE 'jarmain'.'submissions' ADD ."$username." text ;");
-			$query=mysqli_query($con,"INSERT INTO 'jarmain'.'userdata'(username,email,password) VALUES(".$username.",".$email.",".$password");");
+			$email=$_POST['email'];gt
+			$query=mysqli_query($con,"ALTER TABLE  `submissions` ADD ".$username." TEXT CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL ");
+			$query=mysqli_query($con,"INSERT INTO  `a8591040_jarmain`.`userdata` (`Email` ,`Username` ,`Password`)VALUES ('".$email"',  '".$username"',  '".$password"');");
 			json_print(array('success' => 'true' , 'message' => 'added to the database,welcome.' );)
 
 		}
