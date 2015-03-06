@@ -12,8 +12,8 @@
 	$ENDPOINT_POST="/post";//to add to your joj
 	$ENDPOINT_LOGOUT="/logout";//to logout
 	$ENDPOINT_PROFILE="/profile";//for the persons details
-	$ENDPOINT_NEWSFEED="/newsfeed"//do we need one? or is it better to remain private
-	$ENDPOINT_GENERATE="/generate"//to generate the jar or string of images or whatever 
+	$ENDPOINT_NEWSFEED="/newsfeed";//do we need one? or is it better to remain private
+	$ENDPOINT_GENERATE="/generate";//to generate the jar or string of images or whatever 
 
 
 
@@ -63,12 +63,12 @@
 		{
 			if($row->password==$password)
 			{
-				$sessionid=activate($username,$password);
+				$sessionid=generateUniqueId();
 				header("content-type: application/json");
-				$data= array('success' => 'true' ,'sessionid'=>$sessionid );
-				json_print($data);
-				$loggedin=true;
-			}
+				$data= array('success' => 'true' ,'userid'=>$sessionid );
+				
+				$quer=mysql_query($con,"INSERT INTO  `a8591040_jarmain`.`active` (`Username` ,`session_id`)VALUES ('".$username".',  '".$sessionid.".');");
+			
 		}
 		if(!$loggedin)
 		{
@@ -77,18 +77,13 @@
 			json_print($data);
 		}
 	}
-	function activate($username,$password)
-	{
-		global $con;
-		$userid= generateUid();//CREATE THIS FUNCTION
-		$query=msqli_query($con,"INSERT INTO 'jarmain'.'active'('userid','username','password') VALUES(".$userid.",".$username.",".$password.";");
-	}
+	
 	function logout()
 	{
 		global $con;
 		$username=$_POST['username'];
 		$sid=$_POST['userid'];
-		$query=mysqli_query($con,"DELETE FROM 'jarmain'.'active' where 'username'= ".$username.';') or die(json_print(mysql_error()));
+		$query=mysqli_query($con,"DELETE FROM 'jarmain'.'active' where 'username'= ".$username.';');
 		$data= array('success' =>'true','message'=>'successfully logged out' );
 	}
  	function signup()
@@ -104,9 +99,8 @@
 		else
 		{
 			$password=$_POST['password'];
-			$email=$_POST['email'];gt
-			$query=mysqli_query($con,"ALTER TABLE  `submissions` ADD ".$username." TEXT CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL ");
-			$query=mysqli_query($con,"INSERT INTO  `a8591040_jarmain`.`userdata` (`Email` ,`Username` ,`Password`)VALUES ('".$email"',  '".$username"',  '".$password"');");
+			$email=$_POST['email'];
+			$query=mysqli_query($con,"INSERT INTO  `a8591040_jarmain`.`userdata` (`Email` ,`Username` ,`Password`)VALUES ('".$email".',  '".$username."',  '".$password."');");
 			json_print(array('success' => 'true' , 'message' => 'added to the database,welcome.' );)
 
 		}
@@ -116,10 +110,10 @@
 		global $con;
 		$userid=$_POST['userid'];
 		$username=$_POST['username'];
-		if(checkValid($userid))
+		if(checkValid($userid,$username))
 		{
 			$content=$_POST['content'];
-			$query=mysqli_query($con,"INSERT INTO 'jarmain'.'submissions'('.$username.') VALUES(".$content.");");
+			$query=mysqli_query($con,"INSERT INTO  `a8591040_jarmain`.`submissions` (`submission` ,`poster`)VALUES ('".$content."',  '".$username."');");
 			$data= array('success' =>'true', 'message'=>'submitted' );
 			json_print($data);
 		}
@@ -135,4 +129,57 @@
 			echo json_encode($json_content);
 		}
 
+
+	function generateUniqueId($maxLength = 16) {
+    $entropy = '';
+
+    // try ssl first
+    if (function_exists('openssl_random_pseudo_bytes')) {
+        $entropy = openssl_random_pseudo_bytes(64, $strong);
+        // skip ssl since it wasn't using the strong algo
+        if($strong !== true) {
+            $entropy = '';
+        }
+    }
+
+    // add some basic mt_rand/uniqid combo
+    $entropy .= uniqid(mt_rand(), true);
+
+    // try to read from the windows RNG
+    if (class_exists('COM')) {
+        try {
+            $com = new COM('CAPICOM.Utilities.1');
+            $entropy .= base64_decode($com->GetRandom(64, 0));
+        } catch (Exception $ex) {
+        }
+    }
+
+    // try to read from the unix RNG
+    if (is_readable('/dev/urandom')) {
+        $h = fopen('/dev/urandom', 'rb');
+        $entropy .= fread($h, 64);
+        fclose($h);
+    }
+
+    $hash = hash('whirlpool', $entropy);
+    if ($maxLength) {
+        return substr($hash, 0, $maxLength);
+    }
+    return $hash;
+}
+
+
+
+	function checkvalid($uid,$poster)
+	{
+		$query=mysql_query($con,"SELECT * FROM   `a8591040_jarmain`.`active` where session_id = ".$uid);
+		if(mysql_fetch_array($query)->username==$poster)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 ?> 
